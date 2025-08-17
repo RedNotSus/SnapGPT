@@ -11,7 +11,8 @@
             width: 320px;
             margin: 0;
             padding: 0;
-            color: #333;
+            color: #e0e0e0;
+            background: #1e1e1e;
         }
 
         .container {
@@ -22,7 +23,7 @@
             display: flex;
             align-items: center;
             margin-bottom: 16px;
-            border-bottom: 1px solid #eaeaea;
+            border-bottom: 1px solid #333;
             padding-bottom: 12px;
         }
 
@@ -52,11 +53,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, transform 0.1s;
         }
 
         .action-button:hover {
             background-color: #0d8c6d;
+            transform: translateY(-1px);
+        }
+
+        .action-button:active {
+            transform: translateY(1px);
         }
 
         .action-button svg {
@@ -64,12 +70,19 @@
         }
 
         .info-box {
-            background-color: #f7f7f7;
+            background-color: #2b2b2b;
             border-radius: 4px;
             padding: 12px;
             font-size: 13px;
             line-height: 1.4;
             margin-bottom: 16px;
+        }
+
+        .info-box summary {
+            cursor: pointer;
+            font-weight: 500;
+            margin-bottom: 8px;
+            list-style: none;
         }
 
         .shortcut {
@@ -80,24 +93,25 @@
         }
 
         .key {
-            background-color: #e5e5e5;
+            background-color: #3a3a3a;
             border-radius: 3px;
             padding: 2px 6px;
             font-family: monospace;
             font-size: 12px;
+            color: #fff;
         }
 
         footer {
             font-size: 12px;
-            color: #777;
+            color: #aaa;
             text-align: center;
             margin-top: 16px;
-            border-top: 1px solid #eaeaea;
+            border-top: 1px solid #333;
             padding-top: 12px;
         }
 
         a {
-            color: #10a37f;
+            color: #58a6ff;
             text-decoration: none;
         }
 
@@ -119,24 +133,24 @@
                 destination:</label>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <select id="destination-select"
-                    style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                    style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background:#1e1e1e; color:#e0e0e0;">
                     <option value="main">Main Chat</option>
                     <option value="loading">Loading folders...</option>
                 </select>
                 <button id="refresh-folders"
-                    style="padding: 8px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
+                    style="padding: 8px; background: #333; border: 1px solid #444; border-radius: 4px; cursor: pointer;"
                     title="Refresh folder list">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path
                             d="M13.6654 2.66669L10.3321 6.00002M13.6654 2.66669L9.33203 2.66669M13.6654 2.66669L13.6654 7.00002"
-                            stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                         <path
                             d="M2.33203 13.3334L5.66536 10M2.33203 13.3334L6.66536 13.3334M2.33203 13.3334L2.33203 9.00002"
-                            stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </button>
             </div>
-            <div style="font-size: 11px; color: #666; margin-top: 4px;">
+            <div style="font-size: 11px; color: #aaa; margin-top: 4px;">
                 <span id="saved-indicator" style="display: none;">✓ Selection saved for future uploads</span>
             </div>
         </div>
@@ -154,7 +168,8 @@
             Capture & Upload Screenshot
         </button>
 
-        <div class="info-box">
+        <details class="info-box" open>
+            <summary>Usage</summary>
             <div class="shortcut">
                 <span>Keyboard shortcut:</span>
                 <span class="key" id="shortcut-key">Ctrl+Shift+Y</span>
@@ -162,13 +177,13 @@
             <p>
                 This will capture the visible area of your current tab and upload it to ChatGPT.
             </p>
-            <p id="shortcut-info" style="font-size: 12px; color: #666;">
+            <p id="shortcut-info" style="font-size: 12px; color: #aaa;">
                 Shortcut will use your saved folder preference
             </p>
             <p id="folder-info" style="margin-top: 8px; font-style: italic; display: none;">
                 Upload to selected folder in ChatGPT.
             </p>
-        </div>
+        </details>
 
         <a href="options.html" target="_blank" id="options-link">Extension Options</a>
 

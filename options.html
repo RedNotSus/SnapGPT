@@ -8,78 +8,127 @@
         body {
             font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
             margin: 24px;
+            background: #121212;
+            color: #e0e0e0;
         }
 
         .card {
-            border: 1px solid #ddd;
+            border: 1px solid #333;
             border-radius: 10px;
-            padding: 16px;
             max-width: 760px;
+            background: #1e1e1e;
+            padding: 0;
+            margin: 0;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .card summary {
+            cursor: pointer;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            list-style: none;
+        }
+
+        .card[open] > summary {
+            border-bottom: 1px solid #333;
+            margin-bottom: 8px;
+        }
+
+        .card .content {
+            padding: 0 16px 16px 16px;
         }
 
         code {
-            background: #f6f8fa;
+            background: #2d2d2d;
             padding: 2px 6px;
             border-radius: 6px;
+            color: #f0f0f0;
         }
 
         a.button {
             display: inline-block;
             padding: 8px 12px;
             border-radius: 8px;
-            border: 1px solid #888;
             text-decoration: none;
+            background: #10a37f;
+            color: #fff;
+            border: none;
+            transition: background 0.2s;
+        }
+
+        a.button:hover {
+            background: #0d8c6d;
+        }
+
+        a {
+            color: #58a6ff;
+        }
+
+        a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 
 <body>
     <h1>SnapGPT</h1>
-    <div class="card">
-        <h2>Keyboard Shortcut</h2>
-        <p>
-            Chrome requires changing extension shortcuts at
-            <code>chrome://extensions/shortcuts</code>.
-        </p>
-        <p>
-            Open the shortcuts page:
-            <a class="button" href="chrome://extensions/shortcuts" target="_blank" rel="noreferrer">Open shortcuts</a>
-        </p>
-        <p>
-            Look for <strong>“Capture current tab &amp; upload to ChatGPT”</strong> and set your preferred keybinding.
-        </p>
-    </div>
+    <details class="card" open>
+        <summary>Keyboard Shortcut</summary>
+        <div class="content">
+            <p>
+                Chrome requires changing extension shortcuts at
+                <code>chrome://extensions/shortcuts</code>.
+            </p>
+            <p>
+                Open the shortcuts page:
+                <a class="button" href="chrome://extensions/shortcuts" target="_blank" rel="noreferrer">Open shortcuts</a>
+            </p>
+            <p>
+                Look for <strong>“Capture current tab &amp; upload to ChatGPT”</strong> and set your preferred keybinding.
+            </p>
+        </div>
+    </details>
 
-    <div class="card" style="margin-top:16px;">
-        <h2>Behavior</h2>
-        <ul>
-            <li>Captures the visible area of the active tab (Chrome API limitation).</li>
-            <li>Reuses an existing ChatGPT tab if present; otherwise opens a new one.</li>
-            <li>Uploads the screenshot and attempts to auto-send.</li>
-        </ul>
-    </div>
+    <details class="card" style="margin-top:16px;">
+        <summary>Behavior</summary>
+        <div class="content">
+            <ul>
+                <li>Captures the visible area of the active tab (Chrome API limitation).</li>
+                <li>Reuses an existing ChatGPT tab if present; otherwise opens a new one.</li>
+                <li>Uploads the screenshot and attempts to auto-send.</li>
+            </ul>
+        </div>
+    </details>
 
-    <div class="card" style="margin-top:16px;">
-        <h2>Troubleshooting</h2>
-        <h3>If the hotkey doesn't work:</h3>
-        <ol>
-            <li>Make sure the extension is enabled on <a href="chrome://extensions"
-                    target="_blank">chrome://extensions</a></li>
-            <li>Verify no other extension uses the same keyboard shortcut</li>
-            <li>Try using the extension icon in the toolbar as an alternative</li>
-            <li>Check the browser console for errors (right-click > Inspect > Console)</li>
-            <li>For advanced troubleshooting, view the service worker logs:
-                <ul>
-                    <li>Go to <a href="chrome://extensions" target="_blank">chrome://extensions</a></li>
-                    <li>Enable "Developer mode" (top right)</li>
-                    <li>Click "service worker" link under this extension</li>
-                    <li>Look for debug messages or errors in the console</li>
-                </ul>
-            </li>
-            <li>Try our <a href="test.html" target="_blank">test page</a> to see if the extension works there</li>
-        </ol>
-        Version Number: 1.0.2
-    </div>
+    <details class="card" style="margin-top:16px;">
+        <summary>Troubleshooting</summary>
+        <div class="content">
+            <h3>If the hotkey doesn't work:</h3>
+            <ol>
+                <li>Make sure the extension is enabled on <a href="chrome://extensions"
+                        target="_blank">chrome://extensions</a></li>
+                <li>Verify no other extension uses the same keyboard shortcut</li>
+                <li>Try using the extension icon in the toolbar as an alternative</li>
+                <li>Check the browser console for errors (right-click > Inspect > Console)</li>
+                <li>For advanced troubleshooting, view the service worker logs:
+                    <ul>
+                        <li>Go to <a href="chrome://extensions" target="_blank">chrome://extensions</a></li>
+                        <li>Enable "Developer mode" (top right)</li>
+                        <li>Click "service worker" link under this extension</li>
+                        <li>Look for debug messages or errors in the console</li>
+                    </ul>
+                </li>
+                <li>Try our <a href="test.html" target="_blank">test page</a> to see if the extension works there</li>
+            </ol>
+            Version Number: 1.0.2
+        </div>
+    </details>
 </body>
 
 </html>
