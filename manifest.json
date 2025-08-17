@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT Quick Screenshot Uploader",
-  "version": "1.0.0",
-  "description": "Hotkey: capture current tab screenshot and upload to ChatGPT (new or existing tab), then send.",
+  "name": "SnapGPT",
+  "version": "1.0.3",
+  "description": "Capture current tab screenshot and upload to ChatGPT (new or existing tab), then send.",
   "permissions": ["activeTab", "tabs", "scripting", "storage"],
   "host_permissions": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
   "background": {
