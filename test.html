@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Extension Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            line-height: 1.6;
+            max-width: 800px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>ChatGPT Screenshot Uploader Test Page</h1>
+
+    <div class="card">
+        <h2>Hotkey Test</h2>
+        <p>Press <code>Ctrl+Shift+Y</code> (Windows) or <code>Command+Shift+Y</code> (Mac) on this page to test the
+            screenshot functionality.</p>
+        <p>If it works, ChatGPT should open with this page as a screenshot.</p>
+    </div>
+
+    <div class="card">
+        <h2>Troubleshooting</h2>
+        <p>If the hotkey doesn't work:</p>
+        <ol>
+            <li>Open Chrome's extension page: <code>chrome://extensions</code></li>
+            <li>Find this extension and click on "Details"</li>
+            <li>Check "Allow in Incognito" if you're trying to use it there</li>
+            <li>Make sure "Site access" is set appropriately</li>
+            <li>Click "Extension options" and verify shortcuts</li>
+            <li>Try clicking the extension icon in the toolbar (should also work)</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h2>Console Output</h2>
+        <p>Check Chrome's DevTools console for the extension by:</p>
+        <ol>
+            <li>Go to <code>chrome://extensions</code></li>
+            <li>Enable "Developer mode" (top right)</li>
+            <li>Click on "background page" link under this extension</li>
+            <li>Look for debug messages in the console</li>
+        </ol>
+    </div>
+</body>
+
+</html>

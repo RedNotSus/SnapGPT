@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>SnapGPT – Options</title>
+    <style>
+        body {
+            font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            margin: 24px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 16px;
+            max-width: 760px;
+        }
+
+        code {
+            background: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+
+        a.button {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #888;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>SnapGPT</h1>
+    <div class="card">
+        <h2>Keyboard Shortcut</h2>
+        <p>
+            Chrome requires changing extension shortcuts at
+            <code>chrome://extensions/shortcuts</code>.
+        </p>
+        <p>
+            Open the shortcuts page:
+            <a class="button" href="chrome://extensions/shortcuts" target="_blank" rel="noreferrer">Open shortcuts</a>
+        </p>
+        <p>
+            Look for <strong>“Capture current tab &amp; upload to ChatGPT”</strong> and set your preferred keybinding.
+        </p>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+        <h2>Behavior</h2>
+        <ul>
+            <li>Captures the visible area of the active tab (Chrome API limitation).</li>
+            <li>Reuses an existing ChatGPT tab if present; otherwise opens a new one.</li>
+            <li>Uploads the screenshot and attempts to auto-send.</li>
+        </ul>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+        <h2>Troubleshooting</h2>
+        <h3>If the hotkey doesn't work:</h3>
+        <ol>
+            <li>Make sure the extension is enabled on <a href="chrome://extensions"
+                    target="_blank">chrome://extensions</a></li>
+            <li>Verify no other extension uses the same keyboard shortcut</li>
+            <li>Try using the extension icon in the toolbar as an alternative</li>
+            <li>Check the browser console for errors (right-click > Inspect > Console)</li>
+            <li>For advanced troubleshooting, view the service worker logs:
+                <ul>
+                    <li>Go to <a href="chrome://extensions" target="_blank">chrome://extensions</a></li>
+                    <li>Enable "Developer mode" (top right)</li>
+                    <li>Click "service worker" link under this extension</li>
+                    <li>Look for debug messages or errors in the console</li>
+                </ul>
+            </li>
+            <li>Try our <a href="test.html" target="_blank">test page</a> to see if the extension works there</li>
+        </ol>
+        Version Number: 1.0.2
+    </div>
+</body>
+
+</html>
