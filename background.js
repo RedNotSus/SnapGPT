@@ -58,6 +58,42 @@ async function captureActiveVisibleArea() {
 
 async function navigateToChatFolder(tabId, folderId) {
   try {
+    // First check if we're already on the correct folder page
+    const currentPageCheck = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => {
+        const currentUrl = window.location.href;
+
+        // Extract folder ID from URL if present
+        let currentFolderId = null;
+        if (currentUrl.includes("/g/")) {
+          currentFolderId = currentUrl.match(/\/g\/([^/?#]+)/);
+          if (currentFolderId && currentFolderId[1]) {
+            currentFolderId = currentFolderId[1];
+          }
+        }
+
+        return {
+          url: currentUrl,
+          currentFolderId: currentFolderId,
+        };
+      },
+    });
+
+    if (currentPageCheck && currentPageCheck[0] && currentPageCheck[0].result) {
+      const pageInfo = currentPageCheck[0].result;
+      console.log("Current page info:", pageInfo);
+
+      // If we're already on the correct folder page, no need to navigate
+      if (pageInfo.currentFolderId === folderId) {
+        console.log(
+          `Already on the correct folder page (${folderId}), no navigation needed`
+        );
+        return;
+      }
+    }
+
+    // Otherwise, navigate to the requested folder
     let url;
     if (folderId.includes("/project")) {
       url = `https://chatgpt.com/g/${folderId}`;
@@ -112,11 +148,52 @@ async function findOrCreateChatTab(folderId) {
     }
   }
 
+  // Construct the target URL for the specific folder
+  let targetUrl = null;
+  if (folderId && folderId !== "main") {
+    if (folderId.includes("-deltamath")) {
+      targetUrl = `https://chatgpt.com/g/${folderId}`;
+      console.log(`Target URL for folder: ${targetUrl}`);
+    } else if (folderId.includes("/project")) {
+      targetUrl = `https://chatgpt.com/g/${folderId}`;
+      console.log(`Target URL for project: ${targetUrl}`);
+    } else {
+      targetUrl = `https://chatgpt.com/g/${folderId}`;
+      console.log(`Target URL for standard folder: ${targetUrl}`);
+    }
+  }
+
+  // First check if there's already a tab with the exact URL we want to navigate to
+  if (targetUrl) {
+    const exactMatches = await chrome.tabs.query({ url: targetUrl });
+    if (exactMatches.length > 0) {
+      console.log(`Found tab with exact match for URL: ${targetUrl}`);
+      const exactMatch =
+        exactMatches.find((t) => t.status === "complete") || exactMatches[0];
+      await chrome.storage.local.set({ chatTabId: exactMatch.id });
+      return exactMatch;
+    }
+
+    // Try a broader match for cases where the URL might have additional parameters
+    const patternUrl = `${targetUrl}*`;
+    const patternMatches = await chrome.tabs.query({ url: patternUrl });
+    if (patternMatches.length > 0) {
+      console.log(`Found tab with pattern match for URL: ${patternUrl}`);
+      const patternMatch =
+        patternMatches.find((t) => t.status === "complete") ||
+        patternMatches[0];
+      await chrome.storage.local.set({ chatTabId: patternMatch.id });
+      return patternMatch;
+    }
+  }
+
+  // Otherwise check for the stored tab ID
   const { chatTabId } = await chrome.storage.local.get(["chatTabId"]);
   if (chatTabId) {
     try {
       const t = await chrome.tabs.get(chatTabId);
       if (t && !t.discarded) {
+        // If the stored tab exists but isn't the right URL, navigate it
         if (folderId && folderId !== "main") {
           await navigateToChatFolder(t.id, folderId);
         }
@@ -125,6 +202,7 @@ async function findOrCreateChatTab(folderId) {
     } catch {}
   }
 
+  // Find any ChatGPT tabs
   const candidates = await chrome.tabs.query({
     url: ["https://chatgpt.com/*", "https://chat.openai.com/*"],
   });
@@ -319,6 +397,15 @@ async function injectUploader(tabId, dataUrl) {
 
         const currentUrl = window.location.href;
 
+        // Extract folder ID from URL if present
+        let currentFolderId = null;
+        if (currentUrl.includes("/g/")) {
+          currentFolderId = currentUrl.match(/\/g\/([^/?#]+)/);
+          if (currentFolderId && currentFolderId[1]) {
+            currentFolderId = currentFolderId[1];
+          }
+        }
+
         const isDeltamath = currentUrl.includes("-deltamath");
         const isProjectPage = currentUrl.includes("/project");
 
@@ -326,6 +413,7 @@ async function injectUploader(tabId, dataUrl) {
 
         return {
           url: currentUrl,
+          currentFolderId,
           isDeltamath,
           isProjectPage,
           hasFileInputs: fileInputs.length > 0,
@@ -592,8 +680,9 @@ async function handleHotkey(folderId = null) {
     }
 
     console.log("handleHotkey called with folder:", folderId);
-    const { dataUrl } = await captureActiveVisibleArea();
+    const { dataUrl, sourceTabId } = await captureActiveVisibleArea();
 
+    // Find or create a ChatGPT tab with the requested folder
     const chatTab = await findOrCreateChatTab(folderId);
 
     if (!chatTab.active) {
@@ -603,54 +692,102 @@ async function handleHotkey(folderId = null) {
 
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    if (folderId && folderId.includes("-deltamath")) {
-      console.log("Detecting deltamath interface before upload...");
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
+    // Check if the chat tab is already on the correct project
+    let needsNavigation = true;
+    if (folderId && folderId !== "main") {
       try {
-        const result = await chrome.scripting.executeScript({
+        const currentPageCheck = await chrome.scripting.executeScript({
           target: { tabId: chatTab.id },
           func: () => {
-            console.log("Checking for deltamath interface elements");
+            const currentUrl = window.location.href;
 
-            const fileInputs = document.querySelectorAll('input[type="file"]');
-            if (fileInputs.length === 0) {
-              console.log(
-                "No file inputs found, may need to navigate to project page"
-              );
-
-              const projectButtons = Array.from(
-                document.querySelectorAll("button, a")
-              ).filter((el) => {
-                const text = el.innerText.toLowerCase();
-                return text.includes("project") || text.includes("upload");
-              });
-
-              if (projectButtons.length > 0) {
-                console.log("Found project button, clicking it");
-                projectButtons[0].click();
-                return { clickedProjectButton: true };
+            // Extract folder ID from URL if present
+            let currentFolderId = null;
+            if (currentUrl.includes("/g/")) {
+              currentFolderId = currentUrl.match(/\/g\/([^/?#]+)/);
+              if (currentFolderId && currentFolderId[1]) {
+                currentFolderId = currentFolderId[1];
               }
-            } else {
-              console.log("Found file inputs, page ready for upload");
-              return { pageReady: true };
             }
 
-            return { pageUnknown: true };
+            return {
+              url: currentUrl,
+              currentFolderId: currentFolderId,
+            };
           },
         });
 
-        if (result && result[0] && result[0].result) {
-          const status = result[0].result;
-          console.log("Deltamath page status:", status);
+        if (
+          currentPageCheck &&
+          currentPageCheck[0] &&
+          currentPageCheck[0].result
+        ) {
+          const pageInfo = currentPageCheck[0].result;
+          console.log("Current chat tab info:", pageInfo);
 
-          if (status.clickedProjectButton) {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
+          // If we're already on the correct folder page, no need to navigate
+          if (pageInfo.currentFolderId === folderId) {
+            console.log(
+              `Already on the correct folder page (${folderId}), no navigation needed`
+            );
+            needsNavigation = false;
           }
         }
       } catch (e) {
-        console.error("Error checking deltamath interface:", e);
+        console.error("Error checking current folder:", e);
+      }
+
+      // If we need to navigate to a specific folder (like deltamath)
+      if (needsNavigation && folderId.includes("-deltamath")) {
+        console.log("Detecting deltamath interface before upload...");
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        try {
+          const result = await chrome.scripting.executeScript({
+            target: { tabId: chatTab.id },
+            func: () => {
+              console.log("Checking for deltamath interface elements");
+
+              const fileInputs =
+                document.querySelectorAll('input[type="file"]');
+              if (fileInputs.length === 0) {
+                console.log(
+                  "No file inputs found, may need to navigate to project page"
+                );
+
+                const projectButtons = Array.from(
+                  document.querySelectorAll("button, a")
+                ).filter((el) => {
+                  const text = el.innerText.toLowerCase();
+                  return text.includes("project") || text.includes("upload");
+                });
+
+                if (projectButtons.length > 0) {
+                  console.log("Found project button, clicking it");
+                  projectButtons[0].click();
+                  return { clickedProjectButton: true };
+                }
+              } else {
+                console.log("Found file inputs, page ready for upload");
+                return { pageReady: true };
+              }
+
+              return { pageUnknown: true };
+            },
+          });
+
+          if (result && result[0] && result[0].result) {
+            const status = result[0].result;
+            console.log("Deltamath page status:", status);
+
+            if (status.clickedProjectButton) {
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+            }
+          }
+        } catch (e) {
+          console.error("Error checking deltamath interface:", e);
+        }
       }
     }
 
