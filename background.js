@@ -1,7 +1,8 @@
 const CHAT_URLS = ["https://chatgpt.com/", "https://chat.openai.com/"];
+const GEMINI_URL = "https://gemini.google.com/";
 
 console.log(
-  "ChatGPT Screenshot Uploader service worker initialized",
+  "SnapGPT/SnapGemini service worker initialized",
   new Date().toISOString()
 );
 
@@ -668,130 +669,104 @@ async function injectUploader(tabId, dataUrl) {
   });
 }
 
-async function handleHotkey(folderId = null) {
-  try {
-    if (!folderId) {
-      const { preferredFolderId } = await chrome.storage.local.get([
-        "preferredFolderId",
-      ]);
-      folderId = preferredFolderId || null;
-    } else {
-      await chrome.storage.local.set({ preferredFolderId: folderId });
-    }
+async function findOrCreateGeminiTab() {
+  const candidates = await chrome.tabs.query({ url: `${GEMINI_URL}*` });
+  if (candidates.length > 0) {
+    const ready = candidates.find((t) => t.status === "complete") || candidates[0];
+    await chrome.storage.local.set({ geminiTabId: ready.id });
+    return ready;
+  }
 
-    console.log("handleHotkey called with folder:", folderId);
-    const { dataUrl, sourceTabId } = await captureActiveVisibleArea();
+  const newTab = await chrome.tabs.create({ url: GEMINI_URL });
+  await chrome.storage.local.set({ geminiTabId: newTab.id });
+  await waitForTabComplete(newTab.id);
+  return await chrome.tabs.get(newTab.id);
+}
 
-    // Find or create a ChatGPT tab with the requested folder
-    const chatTab = await findOrCreateChatTab(folderId);
+async function injectUploaderGemini(tabId, dataUrl) {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    func: async (payload) => {
+      const dataUrl = payload.dataUrl;
 
-    if (!chatTab.active) {
-      await chrome.tabs.update(chatTab.id, { active: true });
-      await chrome.windows.update(chatTab.windowId, { focused: true });
-    }
+      function dataURLtoBlob(dataurl) {
+        const arr = dataurl.split(",");
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        for (let i = 0; i < n; i++) {
+          u8arr[i] = bstr.charCodeAt(i);
+        }
+        return new Blob([u8arr], { type: mime });
+      }
 
-    await new Promise((resolve) => setTimeout(resolve, 800));
+      function sleep(ms) {
+        return new Promise((res) => setTimeout(res, ms));
+      }
 
-    // Check if the chat tab is already on the correct project
-    let needsNavigation = true;
-    if (folderId && folderId !== "main") {
       try {
-        const currentPageCheck = await chrome.scripting.executeScript({
-          target: { tabId: chatTab.id },
-          func: () => {
-            const currentUrl = window.location.href;
+        const blob = dataURLtoBlob(dataUrl);
+        const file = new File([blob], "screenshot.png", { type: "image/png" });
 
-            // Extract folder ID from URL if present
-            let currentFolderId = null;
-            if (currentUrl.includes("/g/")) {
-              currentFolderId = currentUrl.match(/\/g\/([^/?#]+)/);
-              if (currentFolderId && currentFolderId[1]) {
-                currentFolderId = currentFolderId[1];
-              }
-            }
+        const dt = new DataTransfer();
+        dt.items.add(file);
 
-            return {
-              url: currentUrl,
-              currentFolderId: currentFolderId,
-            };
-          },
-        });
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) {
+            fileInput.files = dt.files;
+            fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
 
-        if (
-          currentPageCheck &&
-          currentPageCheck[0] &&
-          currentPageCheck[0].result
-        ) {
-          const pageInfo = currentPageCheck[0].result;
-          console.log("Current chat tab info:", pageInfo);
+        await sleep(500);
 
-          // If we're already on the correct folder page, no need to navigate
-          if (pageInfo.currentFolderId === folderId) {
-            console.log(
-              `Already on the correct folder page (${folderId}), no navigation needed`
-            );
-            needsNavigation = false;
-          }
+        const promptTextarea = document.querySelector('.prompt-textarea');
+        if (promptTextarea) {
+            promptTextarea.focus();
         }
       } catch (e) {
-        console.error("Error checking current folder:", e);
+        console.error("[Uploader] Failed:", e);
+      }
+    },
+    args: [{ dataUrl }],
+  });
+}
+
+async function handleCapture(folderId = null) {
+  try {
+    const { aiProvider } = await chrome.storage.local.get("aiProvider");
+    const provider = aiProvider || "chatgpt";
+
+    const { dataUrl, sourceTabId } = await captureActiveVisibleArea();
+
+    if (provider === 'gemini') {
+      const geminiTab = await findOrCreateGeminiTab();
+      if (!geminiTab.active) {
+        await chrome.tabs.update(geminiTab.id, { active: true });
+        await chrome.windows.update(geminiTab.windowId, { focused: true });
+      }
+      await injectUploaderGemini(geminiTab.id, dataUrl);
+    } else {
+      // ChatGPT logic
+      if (!folderId) {
+        const { preferredFolderId } = await chrome.storage.local.get([
+          "preferredFolderId",
+        ]);
+        folderId = preferredFolderId || null;
+      } else {
+        await chrome.storage.local.set({ preferredFolderId: folderId });
       }
 
-      // If we need to navigate to a specific folder (like deltamath)
-      if (needsNavigation && folderId.includes("-deltamath")) {
-        console.log("Detecting deltamath interface before upload...");
+      const chatTab = await findOrCreateChatTab(folderId);
 
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        try {
-          const result = await chrome.scripting.executeScript({
-            target: { tabId: chatTab.id },
-            func: () => {
-              console.log("Checking for deltamath interface elements");
-
-              const fileInputs =
-                document.querySelectorAll('input[type="file"]');
-              if (fileInputs.length === 0) {
-                console.log(
-                  "No file inputs found, may need to navigate to project page"
-                );
-
-                const projectButtons = Array.from(
-                  document.querySelectorAll("button, a")
-                ).filter((el) => {
-                  const text = el.innerText.toLowerCase();
-                  return text.includes("project") || text.includes("upload");
-                });
-
-                if (projectButtons.length > 0) {
-                  console.log("Found project button, clicking it");
-                  projectButtons[0].click();
-                  return { clickedProjectButton: true };
-                }
-              } else {
-                console.log("Found file inputs, page ready for upload");
-                return { pageReady: true };
-              }
-
-              return { pageUnknown: true };
-            },
-          });
-
-          if (result && result[0] && result[0].result) {
-            const status = result[0].result;
-            console.log("Deltamath page status:", status);
-
-            if (status.clickedProjectButton) {
-              await new Promise((resolve) => setTimeout(resolve, 1500));
-            }
-          }
-        } catch (e) {
-          console.error("Error checking deltamath interface:", e);
-        }
+      if (!chatTab.active) {
+        await chrome.tabs.update(chatTab.id, { active: true });
+        await chrome.windows.update(chatTab.windowId, { focused: true });
       }
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      await injectUploader(chatTab.id, dataUrl);
     }
-
-    await injectUploader(chatTab.id, dataUrl);
   } catch (e) {
     console.error(e);
   }
@@ -800,22 +775,17 @@ async function handleHotkey(folderId = null) {
 chrome.commands.onCommand.addListener(async (command) => {
   console.log("Command received:", command);
   if (command === "capture-and-upload") {
-    const { preferredFolderId } = await chrome.storage.local.get([
-      "preferredFolderId",
-    ]);
-    console.log(
-      `Starting screenshot capture and upload to folder: ${
-        preferredFolderId || "main"
-      }`
-    );
-    await handleHotkey();
+    await handleCapture();
   }
 });
 
 chrome.tabs.onRemoved.addListener(async (closedId) => {
-  const { chatTabId } = await chrome.storage.local.get(["chatTabId"]);
+  const { chatTabId, geminiTabId } = await chrome.storage.local.get(["chatTabId", "geminiTabId"]);
   if (chatTabId === closedId) {
     await chrome.storage.local.remove("chatTabId");
+  }
+  if (geminiTabId === closedId) {
+    await chrome.storage.local.remove("geminiTabId");
   }
 });
 
@@ -823,7 +793,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Message received:", message);
 
   if (message.action === "captureAndUpload") {
-    handleHotkey(message.destination);
+    handleCapture(message.destination);
     return true;
   }
 
