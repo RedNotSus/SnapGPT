@@ -79,6 +79,25 @@
 <body>
     <h1>SnapGPT</h1>
     <details class="card" open>
+        <summary>AI Provider</summary>
+        <div class="content">
+            <p>Select the AI you want to use for screenshot uploads.</p>
+            <div id="ai-provider-selection">
+                <label>
+                    <input type="radio" name="ai-provider" value="chatgpt" checked>
+                    ChatGPT
+                </label>
+                <br>
+                <label>
+                    <input type="radio" name="ai-provider" value="gemini">
+                    Google Gemini
+                </label>
+            </div>
+            <p id="save-status" style="color: #10a37f;"></p>
+        </div>
+    </details>
+
+    <details class="card" open style="margin-top:16px;">
         <summary>Keyboard Shortcut</summary>
         <div class="content">
             <p>
@@ -129,6 +148,7 @@
             Version Number: 1.0.2
         </div>
     </details>
+    <script src="options.js"></script>
 </body>
 
 </html>

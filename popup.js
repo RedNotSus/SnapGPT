@@ -24,6 +24,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
   updateShortcutDisplay();
 
+  const title = document.querySelector("h1");
+
+  // Load the saved AI provider setting and update UI accordingly
+  chrome.storage.local.get("aiProvider", (result) => {
+    const aiProvider = result.aiProvider || "chatgpt";
+
+    if (aiProvider === "gemini") {
+      title.textContent = "SnapGemini";
+      folderSelectionDiv.style.display = "none";
+      folderInfoText.style.display = "none";
+    } else {
+      // Default to ChatGPT
+      title.textContent = "SnapGPT";
+      checkChatGPTTabAndFetchFolders();
+    }
+  });
+
   async function checkChatGPTTabAndFetchFolders() {
     try {
       const { savedFolders, preferredFolderId } = await new Promise(
@@ -161,8 +178,6 @@ document.addEventListener("DOMContentLoaded", function () {
         "No folders detected. Use refresh button to load folders.";
     }
   }
-
-  checkChatGPTTabAndFetchFolders();
 
   refreshFoldersButton.addEventListener("click", function () {
     folderSelect.innerHTML =
