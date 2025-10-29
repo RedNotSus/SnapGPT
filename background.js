@@ -731,7 +731,6 @@ async function injectUploaderGemini(tabId, dataUrl) {
     args: [{ dataUrl }],
   });
 }
-
 function getAiProvider() {
   return new Promise((resolve) => {
     chrome.storage.local.get("aiProvider", (result) => {
