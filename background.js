@@ -731,12 +731,17 @@ async function injectUploaderGemini(tabId, dataUrl) {
     args: [{ dataUrl }],
   });
 }
+function getAiProvider() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("aiProvider", (result) => {
+      resolve(result.aiProvider || "chatgpt");
+    });
+  });
+}
 
 async function handleCapture(folderId = null) {
   try {
-    const { aiProvider } = await chrome.storage.local.get("aiProvider");
-    const provider = aiProvider || "chatgpt";
-
+    const provider = await getAiProvider();
     const { dataUrl, sourceTabId } = await captureActiveVisibleArea();
 
     if (provider === 'gemini') {
